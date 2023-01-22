@@ -15,7 +15,7 @@ public class MockURLProtocol: URLProtocol {
     override public class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override public func startLoading() {
-        let handler = MockURLProtocol.requestHandler!
+        guard let handler = Self.requestHandler else { return }
 
         let (response, data): (HTTPURLResponse, Data?)
         do {
