@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_APP_NAME: Xcode_15.1.app
+
+jobs:
+  test:
+    name: Test
+    timeout-minutes: 10
+    runs-on: macos-13
+    steps:
+      - name: Git - Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Select Xcode version
+        run: |
+          ls -d /Applications/Xcode*
+          sudo xcode-select --switch /Applications/$XCODE_APP_NAME/Contents/Developer
+
+      - name: Test
+        run: |
+          swift test
