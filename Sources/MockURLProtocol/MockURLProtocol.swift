@@ -10,6 +10,23 @@ import Foundation
 public class MockURLProtocol: URLProtocol {
     public static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data?))?
 
+    public static func makeRequest(withResponseData responseJSON: Data, statusCode: Int, url: URL) {
+        Self.requestHandler = { _ in
+            let response = HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: nil)!
+            return (response, responseJSON)
+        }
+    }
+
+    public static func makeRequest(withResponseJSONString response: String, statusCode: Int, url: URL) {
+        let data = response.data(using: .utf8)!
+        makeRequest(withResponseData: data, statusCode: statusCode, url: url)
+    }
+
+    public static func makeRequest(withResponse response: some Encodable, statusCode: Int, url: URL) throws {
+        let data = try JSONEncoder().encode(response)
+        makeRequest(withResponseData: data, statusCode: statusCode, url: url)
+    }
+
     override public class func canInit(with _: URLRequest) -> Bool { true }
 
     override public class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
