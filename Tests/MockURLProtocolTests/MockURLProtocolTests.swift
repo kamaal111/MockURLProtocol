@@ -9,15 +9,43 @@ import XCTest
 @testable import MockURLProtocol
 
 final class MockURLProtocolTests: XCTestCase {
-    func testMultipleURLSessions() async throws {
+    var urlSession: URLSession!
+    let url = URL(string: "https://kamaal.io")!
+
+    override func setUp() async throws {
         let configuration = URLSessionConfiguration.default
         configuration.protocolClasses = [MockURLProtocol.self]
-        let urlSession = URLSession(configuration: configuration)
+        urlSession = URLSession(configuration: configuration)
+    }
+
+    func testMultipleResponses() async throws {
+        let responses = [
+            MockedResponse(data: #"{"message": "I should be first"}"#.data(using: .utf8)!, statusCode: 200, url: url),
+            MockedResponse(data: #"{"message": "I should be second"}"#.data(using: .utf8)!, statusCode: 201, url: url),
+            MockedResponse(data: #"{"message": "I should be third"}"#.data(using: .utf8)!, statusCode: 202, url: url),
+        ]
+        MockURLProtocol.makeRequests(with: responses)
+
+        var receivedResponses: [(Data, HTTPURLResponse)] = []
+        for _ in responses {
+            let (data, response) = try await urlSession.data(from: url)
+            let httpResonse = try XCTUnwrap(response as? HTTPURLResponse)
+            receivedResponses.append((data, httpResonse))
+        }
+
+        XCTAssertEqual(receivedResponses.count, responses.count)
+        for (index, (data, response)) in receivedResponses.enumerated() {
+            XCTAssertEqual(response.statusCode, responses[index].statusCode)
+            XCTAssertEqual(data, responses[index].data)
+        }
+    }
+
+    func testMultipleURLSessions() async throws {
         let url1 = URL(string: "https://first.com")!
         let url2 = URL(string: "https://second.com")!
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(
-                url: URL(string: "https://kamaal.io")!,
+                url: self.url,
                 statusCode: 200,
                 httpVersion: nil,
                 headerFields: nil
