@@ -7,8 +7,35 @@
 
 import Foundation
 
+public struct MockedResponse {
+    public let data: Data
+    public let statusCode: Int
+    public let url: URL
+
+    public init(data: Data, statusCode: Int, url: URL) {
+        self.data = data
+        self.statusCode = statusCode
+        self.url = url
+    }
+}
+
 public class MockURLProtocol: URLProtocol {
     public static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data?))?
+
+    public static func makeRequests(with responses: [MockedResponse]) {
+        var count = 0
+        Self.requestHandler = { _ in
+            let current = responses[count]
+            let response = HTTPURLResponse(
+                url: current.url,
+                statusCode: current.statusCode,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            count += 1
+            return (response, current.data)
+        }
+    }
 
     public static func makeRequest(withResponseData responseJSON: Data, statusCode: Int, url: URL) {
         Self.requestHandler = { _ in
